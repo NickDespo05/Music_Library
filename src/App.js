@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState, Suspense } from "react";
 import SearchBar from "./SearchBar";
 import Gallery from "./Gallery";
 import { DataContext } from "./context/DataContext";
@@ -7,11 +7,13 @@ import { useRef } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AlbumView } from "./AlbumView";
 import { ArtistView } from "./ArtistView";
+import { createResource as fetchData } from "./helper";
+import Spinner from "./Spinner";
 
 function App() {
     let [search, setSearch] = useState(" ");
     let [message, setMessage] = useState("Search for Music");
-    let [data, setData] = useState([]);
+    let [data, setData] = useState(null);
     let searchInput = useRef("");
 
     const API_URL =
@@ -38,6 +40,22 @@ function App() {
         e.preventDefault();
     };
 
+    useEffect(() => {
+        if (searchTerm) {
+            setData(fecthData(searchTerm));
+        }
+    }, [searchTerm]);
+
+    const renderGallery = () => {
+        if (data) {
+            return (
+                <Suspense fallback={<Spinner />}>
+                    <Gallery data={data} />
+                </Suspense>
+            );
+        }
+    };
+
     return (
         <div>
             {message}
@@ -48,11 +66,10 @@ function App() {
                         element={
                             <Fragment>
                                 <SearchBar handleSearch={handleSearch} />
-
-                                <Gallery data={data} />
                             </Fragment>
                         }
                     />
+                    {renderGallery()}
                     <Route path="/album/:id" element={<AlbumView />} />
                     <Route path="/artist/:id" element={<ArtistView />} />
                 </Routes>
